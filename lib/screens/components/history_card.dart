@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-String buttonText = "COPY";
-
-class HistoryCard extends StatelessWidget {
+class HistoryCard extends StatefulWidget {
   const HistoryCard({Key? key, this.originalLink = "", this.shortenedLink = ""})
       : super(key: key);
 
   final String originalLink, shortenedLink;
+
+  @override
+  State<HistoryCard> createState() => _HistoryCardState();
+}
+
+class _HistoryCardState extends State<HistoryCard> {
+  String buttonText = "COPY";
 
   @override
   Widget build(BuildContext context) {
@@ -15,13 +21,16 @@ class HistoryCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text(originalLink),
+              Text(widget.originalLink),
             ],
           ),
-          Text(shortenedLink),
+          Text(widget.shortenedLink),
           ElevatedButton(
             onPressed: () {
-              buttonText = "COPIED!";
+              setState(() {
+                Clipboard.setData(ClipboardData(text: widget.shortenedLink));
+                buttonText = "COPIED!";
+              });
             },
             child: Text(buttonText,
                 style: const TextStyle(
