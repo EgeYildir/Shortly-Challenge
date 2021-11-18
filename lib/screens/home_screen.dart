@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
             0,
             HistoryCard(
               originalUrl: data['original_link'],
-              shortenedUrl: data['short_link'],
+              shortenedUrl: data['full_short_link'],
             ));
       });
       return response;
