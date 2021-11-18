@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shortly_challenge/screens/components/history_card.dart';
@@ -14,21 +13,29 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final history = [];
+
   String fullUrl = "";
   String shortenedUrl = "";
 
+  //Define form key.
+  final formKey = GlobalKey<FormState>();
+
+  //Define field states.
+  String fieldMessage = 'Shorten a link here ...';
+  Color messageColor = Colors.grey;
+
   Future<http.Response> fetchURL(link) async {
-    final response =
-        await http.get(Uri.parse("https://api.shrtco.de/v2/shorten?url=$link"));
-    if (response.statusCode == 201) {
-      Map<String, dynamic> body = jsonDecode(response.body);
+    final response = await http.get(Uri.parse(
+        "https://api.shrtco.de/v2/shorten?url=$link")); //Api address is hardcoded!
+    Map<String, dynamic> body = jsonDecode(response.body);
+    if (body['ok']) {
       var data = body['result'];
       setState(() {
         history.insert(
             0,
             HistoryCard(
-              originalLink: data['original_link'],
-              shortenedLink: data['short_link'],
+              originalUrl: data['original_link'],
+              shortenedUrl: data['short_link'],
             ));
       });
       return response;
@@ -37,7 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  TextEditingController urlController = TextEditingController();
+  TextEditingController urlController =
+      TextEditingController(); //Define a controller for form field.
 
   @override
   Widget build(BuildContext context) {
@@ -58,14 +66,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Container(
                               margin:
                                   const EdgeInsets.only(top: 35, bottom: 20),
-                              child: const Text(
-                                "Shortly",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF35323E),
-                                ),
+                              child: SvgPicture.asset(
+                                "assets/images/logo.svg",
                               ),
                             ),
                             SvgPicture.asset(
@@ -92,43 +94,74 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     )
-                  : ListView.builder(
-                      itemCount: history.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return history[index];
-                      },
+                  : Container(
+                      margin: const EdgeInsets.all(10),
+                      child: ListView.builder(
+                        itemCount: history.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          return history[index];
+                        },
+                      ),
                     ),
             ),
             Container(
               color: const Color(0xFF3B3054),
               padding: const EdgeInsets.all(30),
-              child: Column(
-                children: <Widget>[
-                  TextField(
-                    controller: urlController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Shorten a link here ...',
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      fetchURL(urlController.text);
-                    },
-                    child: const Text(
-                      "SHORTEN IT!",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+              child: Form(
+                key: formKey,
+                child: Column(
+                  children: <Widget>[
+                    TextFormField(
+                      controller: urlController,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        hintText: fieldMessage,
+                        hintStyle: TextStyle(color: messageColor),
+                        filled: true,
+                        fillColor: Colors.white,
+                        errorStyle: const TextStyle(height: 0),
                       ),
+                      textAlign: TextAlign.center,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          setState(() {
+                            fieldMessage = "Please add a link here";
+                            messageColor =
+                                Colors.red; //Warn user when no url is provided.
+                          });
+                          return "";
+                        }
+                        return null;
+                      },
                     ),
-                    style: ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all(const Color(0xFF2ACFCF)),
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (formKey.currentState!.validate()) {
+                                //Validate the form field.
+                                fetchURL(urlController
+                                    .text); //Call fetch url with the given input.
+                              }
+                            },
+                            child: const Text(
+                              "SHORTEN IT!",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(
+                                  const Color(0xFF2ACFCF)),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
